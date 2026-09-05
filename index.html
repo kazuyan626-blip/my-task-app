@@ -147,7 +147,7 @@
     };
 
     // ▼ ご自身の Gemini APIキー（AIzaSy...）を貼り付けます
-    const GEMINI_API_KEY = "AQ.Ab8RN6JmcwC6A5t6k-t1bhIHs6FDHxNnoplDJA1ieiGkI1eG6g";
+    const GEMINI_API_KEY = "ここにGeminiのAPIキー";
 
     let db;
     let tasks = [];
@@ -169,8 +169,7 @@
         snapshot.forEach((doc) => {
           tasks.push({ id: doc.id, ...doc.data() });
         });
-        checkAlerts();
-        tasks.sort((a, b) => b.score - a.score);
+        checkAlertsAndSort();
         renderTasks();
       });
 
@@ -184,16 +183,32 @@
       });
     }
 
-    function checkAlerts() {
+    // アラートチェック ＆ 最上部優先ソート
+    function checkAlertsAndSort() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       tasks.forEach(t => {
-        if (!t.date) { t.isNear = false; return; }
+        if (!t.date) {
+          t.isNear = false;
+          t.diffDays = 999;
+          return;
+        }
         const target = new Date(t.date);
         target.setHours(0, 0, 0, 0);
-        const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-        t.isNear = (diffDays <= 3);
+        const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        t.diffDays = diff;
+        t.isNear = (diff <= 3);
+      });
+
+      // 並び替え: 本日・翌日(diffDays <= 1)を最優先、グループ内はAIスコア順
+      tasks.sort((a, b) => {
+        const aTop = (a.diffDays <= 1);
+        const bTop = (b.diffDays <= 1);
+
+        if (aTop && !bTop) return -1;
+        if (!aTop && bTop) return 1;
+        return b.score - a.score;
       });
     }
 
