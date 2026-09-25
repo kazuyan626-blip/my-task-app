@@ -3,49 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini AI タスク自動優先順位アプリ (Voice & Cloud Sync)</title>
+  <title>Gemini AI タスクメモ (Voice & Sync)</title>
   <style>
     :root {
       --primary: #4f46e5;
-      --bg: #f8fafc;
+      --primary-hover: #4338ca;
+      --bg: #f1f5f9;
       --card-bg: #ffffff;
-      --text-main: #1e293b;
+      --text-main: #0f172a;
       --text-sub: #64748b;
+      --border-color: #e2e8f0;
+      
       --high-bg: #ef4444;
       --med-bg: #f59e0b;
       --low-bg: #10b981;
+      
+      --today-bg: #fff7ed;
+      --today-border: #f97316;
+      --overdue-bg: #fef2f2;
+      --overdue-border: #ef4444;
     }
+
+    * { box-sizing: border-box; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       max-width: 520px;
       margin: 0 auto;
-      padding: 20px 16px;
+      padding: 24px 16px;
       background-color: var(--bg);
       color: var(--text-main);
-      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
     }
 
-    h2 { font-size: 1.35rem; font-weight: 700; text-align: center; margin-bottom: 20px; color: var(--primary); }
-
-    .form-box {
-      background: var(--card-bg);
-      padding: 18px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    /* ヘッダーエリア */
+    .app-header {
+      text-align: center;
       margin-bottom: 20px;
+    }
+
+    .app-header h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--primary);
+      margin: 0 0 6px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .sync-status {
       font-size: 0.78rem;
       font-weight: 600;
       color: #059669;
-      text-align: right;
-      margin-bottom: 10px;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: flex-end;
-      gap: 4px;
+      gap: 6px;
+      background: #ecfdf5;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid #a7f3d0;
     }
 
     .sync-dot {
@@ -53,40 +72,70 @@
       height: 8px;
       background-color: #10b981;
       border-radius: 50%;
-      display: inline-block;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
     }
 
-    label { font-size: 0.85rem; font-weight: 600; color: var(--text-sub); display: block; margin-bottom: 4px; }
+    /* 入力カード */
+    .form-box {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.03);
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+    }
+
+    label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      display: block;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
 
     .input-group {
       display: flex;
       gap: 8px;
-      margin-bottom: 10px;
+      margin-bottom: 14px;
     }
 
     input[type="text"], input[type="date"] {
-      padding: 10px;
+      padding: 12px 14px;
       width: 100%;
-      box-sizing: border-box;
       font-size: 15px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 10px;
       outline: none;
+      background-color: #f8fafc;
+      color: var(--text-main);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="text"]:focus, input[type="date"]:focus {
+      border-color: var(--primary);
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
     }
 
     .mic-btn {
       background-color: #0284c7;
       color: white;
       border: none;
-      padding: 0 14px;
-      border-radius: 8px;
-      font-size: 1.1rem;
+      padding: 0 16px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 4px;
+      transition: background-color 0.2s, transform 0.1s;
     }
+
+    .mic-btn:active { transform: scale(0.97); }
 
     .mic-btn.recording {
       background-color: #ef4444;
@@ -94,70 +143,208 @@
     }
 
     @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.03); }
+      100% { opacity: 1; transform: scale(1); }
     }
 
     button#addBtn {
-      background-color: var(--primary);
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
       color: white;
       border: none;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 14px;
+      border-radius: 10px;
       width: 100%;
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      margin-top: 5px;
+      margin-top: 6px;
+      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.25);
+      transition: opacity 0.2s, transform 0.1s;
     }
 
-    button:disabled { background-color: #94a3b8 !important; cursor: not-allowed; }
+    button#addBtn:active { transform: scale(0.99); }
+    button:disabled { background: #94a3b8 !important; cursor: not-allowed; box-shadow: none !important; }
 
-    h3 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
+    /* セクションタイトル */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* タスクリスト */
     ul { list-style: none; padding: 0; margin: 0; }
 
     li {
       background: var(--card-bg);
       padding: 16px;
       margin-bottom: 12px;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
-      border-left: 4px solid #cbd5e1;
+      border-radius: 14px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+      border-left: 5px solid #cbd5e1;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     li.high-border { border-left-color: var(--high-bg); }
     li.med-border { border-left-color: var(--med-bg); }
     li.low-border { border-left-color: var(--low-bg); }
-    li.alert-near { background: #fef2f2; }
 
-    .task-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-    .task-title { font-size: 0.98rem; font-weight: 600; word-break: break-all; }
-    .reason { font-size: 0.82rem; color: var(--text-sub); margin-top: 8px; background: #f1f5f9; padding: 8px 10px; border-radius: 6px; }
-    .priority { font-weight: 700; padding: 4px 8px; border-radius: 6px; color: white; font-size: 0.75rem; white-space: nowrap; }
+    li.alert-today {
+      background: var(--today-bg);
+      border-color: #fed7aa;
+      border-left-color: var(--today-border);
+    }
 
-    .high { background: var(--high-bg); }
-    .med { background: var(--med-bg); }
-    .low { background: var(--low-bg); }
+    li.alert-overdue {
+      background: var(--overdue-bg);
+      border-color: #fecaca;
+      border-left-color: var(--overdue-border);
+    }
 
-    .alert-badge { background: var(--high-bg); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: 6px; animation: blink 1.5s infinite; }
-    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
 
-    .task-footer { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-    .action-btn { padding: 6px 12px; font-size: 0.78rem; font-weight: 600; text-decoration: none; border-radius: 6px; border: none; cursor: pointer; }
+    .task-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .task-title {
+      font-size: 1.02rem;
+      font-weight: 700;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+
+    .date-text {
+      font-size: 0.82rem;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    .reason {
+      font-size: 0.83rem;
+      color: #475569;
+      margin-top: 10px;
+      background: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #f1f5f9;
+      line-height: 1.45;
+    }
+
+    .priority {
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      color: white;
+      font-size: 0.72rem;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+
+    .high { background: var(--high-bg); box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2); }
+    .med { background: var(--med-bg); box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2); }
+    .low { background: var(--low-bg); box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); }
+
+    .alert-badge {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      width: fit-content;
+    }
+
+    .badge-today { background: var(--today-border); color: white; animation: blink 1.5s infinite; }
+    .badge-overdue { background: var(--overdue-border); color: white; animation: blink 1s infinite; }
+
+    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+    .task-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-decoration: none;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+
+    .action-btn:active { transform: scale(0.96); }
+
     .cal-btn { background-color: #059669; color: white; }
     .edit-btn { background-color: #0284c7; color: white; }
     .delete-btn { background-color: #64748b; color: white; }
     .restore-btn { background-color: var(--primary); color: white; }
     .purge-btn { background-color: var(--high-bg); color: white; }
 
-    .history-section { margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
-    .history-header { display: flex; justify-content: space-between; align-items: center; }
-    .toggle-btn { width: auto; padding: 5px 12px; background-color: #64748b; font-size: 0.78rem; border-radius: 6px; color: white; border: none; cursor: pointer; }
-    .history-content { display: none; margin-top: 12px; }
+    /* 履歴セクション */
+    .history-section {
+      margin-top: 36px;
+      border-top: 2px dashed #cbd5e1;
+      padding-top: 20px;
+    }
+
+    .toggle-btn {
+      width: auto;
+      padding: 6px 14px;
+      background-color: #64748b;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: 20px;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .history-content { display: none; margin-top: 14px; }
     .history-content.open { display: block; }
-    .history-item { background: #f1f5f9; color: var(--text-sub); border-left: 4px solid #94a3b8; }
-    .history-item .task-title { text-decoration: line-through; opacity: 0.8; }
+
+    .history-item {
+      background: #f8fafc;
+      color: var(--text-sub);
+      border-left: 5px solid #94a3b8;
+      box-shadow: none;
+    }
+
+    .history-item .task-title {
+      text-decoration: line-through;
+      opacity: 0.75;
+      color: var(--text-sub);
+    }
   </style>
 
   <!-- Firebase SDK -->
@@ -213,38 +400,46 @@
       });
     }
 
+    // アラート判定 & 当日最優先ソート
     function checkAlertsAndSort() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       tasks.forEach(t => {
         if (!t.date) {
-          t.isNear = false;
           t.diffDays = 999;
+          t.isToday = false;
+          t.isOverdue = false;
           return;
         }
         const target = new Date(t.date);
         target.setHours(0, 0, 0, 0);
+        
         const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
         t.diffDays = diff;
-        t.isNear = (diff <= 3);
+        t.isToday = (diff === 0);
+        t.isOverdue = (diff < 0);
       });
 
       tasks.sort((a, b) => {
-        const aTop = (a.diffDays <= 1);
-        const bTop = (b.diffDays <= 1);
+        const aTopCategory = (a.isToday || a.isOverdue) ? 1 : 0;
+        const bTopCategory = (b.isToday || b.isOverdue) ? 1 : 0;
 
-        if (aTop && !bTop) return -1;
-        if (!aTop && bTop) return 1;
+        if (aTopCategory !== bTopCategory) {
+          return bTopCategory - aTopCategory;
+        }
+        if (a.diffDays !== b.diffDays) {
+          return a.diffDays - b.diffDays;
+        }
         return b.score - a.score;
       });
     }
 
-    // --- 音声入力機能 (Speech Recognition) ---
+    // 音声入力機能
     window.startSpeech = function() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert('お使いのブラウザは音声入力に対応していません。ChromeやSafariをお試しください。');
+        alert('お使いのブラウザは音声入力に対応していません。');
         return;
       }
 
@@ -254,12 +449,12 @@
 
       recognition.onstart = () => {
         micBtn.classList.add('recording');
-        micBtn.innerText = '🔴 録音中...';
+        micBtn.innerHTML = '🔴 録音中...';
       };
 
       recognition.onend = () => {
         micBtn.classList.remove('recording');
-        micBtn.innerText = '🎤 音声';
+        micBtn.innerHTML = '🎤 音声';
       };
 
       recognition.onresult = (event) => {
@@ -293,20 +488,20 @@
 
         const prompt = `
 今日の日付は "${todayStr}" です。
-以下のタスク文章を分析し、優先順位スコア（1〜100）、優先度（高/中/低）、1文の理由、および文章内に含まれる日付情報（例: 明日, 来週火曜, 12日など）から推測される YYYY-MM-DD 形式の期限を出力してください。
+以下のタスク文章を分析し、優先順位スコア（1〜100）、優先度（高/中/低）、1文の理由、および文章内に含まれる日付情報から推測される YYYY-MM-DD 形式の期限を出力してください。
 
 入力内容: "${text}"
 ${dateInfo}
 
 【ルール】
 - 文章から日付が特定できる場合、extractedDate に YYYY-MM-DD 形式で設定してください。手動指定の期限がある場合はそれを優先します。特定できない場合は null にしてください。
-- 抽出後のタスク本文 (cleanText) からは「明日」「来週火曜」などの日付単語を取り除いた純粋なタスク名に整えてください。
+- 抽出後のタスク本文 (cleanText) からは日付単語を取り除いた純粋なタスク名に整えてください。
 
 以下のJSON形式のみで回答してください:
 {"score": 85, "priority": "高", "reason": "理由を1文で簡潔に", "extractedDate": "YYYY-MM-DDまたはnull", "cleanText": "整形後のタスク名"}
 `;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
@@ -322,7 +517,6 @@ ${dateInfo}
         if (aiResult.priority === '高') priorityClass = 'high';
         else if (aiResult.priority === '中') priorityClass = 'med';
 
-        // 手動入力の日付を優先、無ければAI抽出日付を採用
         const finalDate = dateVal ? dateVal : (aiResult.extractedDate || '');
         const finalTaskText = aiResult.cleanText || text;
 
@@ -393,7 +587,7 @@ ${dateInfo}
       const btn = document.getElementById('toggleBtn');
       if (content.classList.contains('open')) {
         content.classList.remove('open');
-        btn.innerText = '開く ▼';
+        btn.innerText = '表示する ▼';
       } else {
         content.classList.add('open');
         btn.innerText = '閉じる ▲';
@@ -404,15 +598,23 @@ ${dateInfo}
       const list = document.getElementById('taskList');
       list.innerHTML = '';
       if (tasks.length === 0) {
-        list.innerHTML = '<li style="background:none; color:var(--text-sub); text-align:center;">タスクはありません</li>';
+        list.innerHTML = '<li style="background:none; border:none; box-shadow:none; color:var(--text-sub); text-align:center; padding: 24px;">タスクはありません✨</li>';
       } else {
         tasks.forEach(t => {
           const li = document.createElement('li');
           li.classList.add(`${t.priorityClass}-border`);
-          if (t.isNear) li.classList.add('alert-near');
 
-          const dateDisplay = t.date ? `(${t.date})` : '<span style="color:var(--text-sub);">[期限なし]</span>';
-          const alertBadge = t.isNear ? '<span class="alert-badge">⚠️ 期限間近</span>' : '';
+          let alertBadge = '';
+          if (t.isOverdue) {
+            li.classList.add('alert-overdue');
+            alertBadge = `<span class="alert-badge badge-overdue">🚨 期限切れ (${Math.abs(t.diffDays)}日前)</span>`;
+          } else if (t.isToday) {
+            li.classList.add('alert-today');
+            alertBadge = `<span class="alert-badge badge-today">📌 本日期限</span>`;
+          }
+
+          const dateDisplay = t.date ? `<span class="date-text">📅 ${t.date}</span>` : '<span class="date-text">[期限なし]</span>';
+          
           let calBtnHtml = '';
           if (t.date) {
             const formattedDate = t.date.replace(/-/g, '');
@@ -422,14 +624,20 @@ ${dateInfo}
 
           li.innerHTML = `
             <div class="task-header">
-              <span class="task-title">${t.text} ${dateDisplay} ${alertBadge}</span>
+              <div class="task-title-group">
+                <span class="task-title">${t.text}</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  ${dateDisplay}
+                  ${alertBadge}
+                </div>
+              </div>
               <span class="priority ${t.priorityClass}">${t.priorityLabel} (${t.score}点)</span>
             </div>
-            <div class="reason">💡 AI理由: ${t.reason}</div>
+            <div class="reason">💡 <b>AI分析:</b> ${t.reason}</div>
             <div class="task-footer">
               ${calBtnHtml}
               <button class="action-btn edit-btn" onclick="editTask('${t.id}')">編集</button>
-              <button class="action-btn delete-btn" onclick="deleteTask('${t.id}')">削除</button>
+              <button class="action-btn delete-btn" onclick="deleteTask('${t.id}')">完了/削除</button>
             </div>
           `;
           list.appendChild(li);
@@ -439,7 +647,7 @@ ${dateInfo}
       const historyList = document.getElementById('historyList');
       historyList.innerHTML = '';
       if (deletedTasks.length === 0) {
-        historyList.innerHTML = '<li style="background:none; color:var(--text-sub); text-align:center;">削除された履歴はありません</li>';
+        historyList.innerHTML = '<li style="background:none; border:none; box-shadow:none; color:var(--text-sub); text-align:center;">履歴はありません</li>';
       } else {
         deletedTasks.forEach(t => {
           const li = document.createElement('li');
@@ -460,16 +668,17 @@ ${dateInfo}
 </head>
 <body>
 
-  <h2>✨ Gemini AI タスクメモ (Voice & Sync)</h2>
-
-  <div class="sync-status" id="syncStatus">
-    <span class="sync-dot"></span> クラウド自動同期中
+  <div class="app-header">
+    <h2>✨ Gemini AI タスクメモ</h2>
+    <div class="sync-status" id="syncStatus">
+      <span class="sync-dot"></span> クラウド自動同期中
+    </div>
   </div>
 
   <div class="form-box">
     <label>タスク・メモ内容</label>
     <div class="input-group">
-      <input type="text" id="taskInput" placeholder="例: 明日の午後に単行本を捨てる">
+      <input type="text" id="taskInput" placeholder="例: 明日の午後に書類を送付">
       <button type="button" class="mic-btn" id="micBtn" onclick="startSpeech()">🎤 音声</button>
     </div>
 
@@ -479,13 +688,15 @@ ${dateInfo}
     <button id="addBtn" type="button" onclick="addTaskWithAI()">AIで優先度を判定して保存</button>
   </div>
 
-  <h3>📋 実行中のタスク</h3>
+  <div class="section-header">
+    <h3>📋 実行中のタスク</h3>
+  </div>
   <ul id="taskList"></ul>
 
   <div class="history-section">
-    <div class="history-header">
-      <h3>🗑️ 削除・完了履歴</h3>
-      <button type="button" class="toggle-btn" id="toggleBtn" onclick="toggleHistory()">開く ▼</button>
+    <div class="section-header">
+      <h3>🗑️ 完了・削除履歴</h3>
+      <button type="button" class="toggle-btn" id="toggleBtn" onclick="toggleHistory()">表示する ▼</button>
     </div>
     <div class="history-content" id="historyContent">
       <ul id="historyList"></ul>
